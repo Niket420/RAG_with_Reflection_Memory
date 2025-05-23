@@ -14,6 +14,7 @@ import asyncio
 from qdrant_client.models import Distance, VectorParams
 from langchain_qdrant import QdrantVectorStore
 
+
 load_dotenv()
 
 api_key = os.getenv("AZURE_OPENAI_API_KEY")
@@ -115,7 +116,7 @@ def generate(state: State):
 
 # make sure prompt.invoke works correctly| dekh le bhai same hi hai
 prompt = PromptTemplate.from_template("you are a helpful assistant. Answer the question based on the context provided."
-                                      "If you don't know the answer, say 'I don't know'.\n\nContext: {context}\n\nQuestion: {question}\n\nAnswer:")
+                                      "If you don't know the answer, still answer something related to it, but give empty reply'.\n\nContext: {context}\n\nQuestion: {question}\n\nAnswer:")
 
 
 
@@ -126,7 +127,7 @@ if __name__=="__main__":
   all_splits = splitting_pdfs(pages)
   embeddings = get_embeddings(all_splits)
 
-  question = "can u tell me the name of this paper based on the content?"
+  question = "can you tell me about the name of this paper?"
   state = {"question": question}
 
 
