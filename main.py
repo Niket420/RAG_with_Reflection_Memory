@@ -24,8 +24,6 @@ api_version = os.getenv("AZURE_OPENAI_API_VERSION")
 
 
 
-
-
 if not os.environ.get("AZURE_OPENAI_API_KEY"):
   os.environ["AZURE_OPENAI_API_KEY"] = getpass.getpass("Enter API key for Azure: ")
 
@@ -38,16 +36,23 @@ llm = AzureChatOpenAI(
     )
 
 
+# embeddings = AzureOpenAIEmbeddings(
+#         azure_endpoint=endpoint,
+#         azure_deployment=embedding_deployment,
+#         openai_api_version=api_version,
+#         model="text-embedding-3-large" 
+#             )
+
 embeddings = AzureOpenAIEmbeddings(
-        azure_endpoint=endpoint,
-        azure_deployment=embedding_deployment,
-        openai_api_version=api_version,
-            )
+            azure_deployment = os.getenv("OPENAI_DEPLOYMENT_NAME"),
+            azure_endpoint = os.getenv("OPENAI_ENDPOINT"),
+            api_key = os.getenv("OPENAI_API_KEY")
+        )
 
 
 client = QdrantClient(":memory:")
-embedding_dim = 768  # change based on your embeddings
-collection_name = "test"
+embedding_dim = 3072  
+collection_name = "test2"
 
 
 # Create the collection
@@ -58,7 +63,7 @@ client.recreate_collection(
 
 vector_store = QdrantVectorStore(
             client=client,
-            collection_name="test",
+            collection_name="test2",
             embedding=embeddings,
         )
 
@@ -96,18 +101,19 @@ class State(TypedDict):
 
 # Define application steps
 def retrieve(state: State):
-    retrieved_docs = vector_store.similarity_search(state["question"])
-    return {**state,"context": retrieved_docs}
+    retrieved_docs = vector_store.similarity_search(state["question"],k=5)
+    return {"context": retrieved_docs}
 
 
 def generate(state: State):
     docs_content = "\n\n".join(doc.page_content for doc in state["context"])
     messages = prompt.invoke({"question": state["question"], "context": docs_content})
     response = llm.invoke(messages)
-    return {**state,"answer": response.content}
+    print(response.content)
+    return {"answer": response.content}
 
 
-# make sure prompt.invoke works correctly
+# make sure prompt.invoke works correctly| dekh le bhai same hi hai
 prompt = PromptTemplate.from_template("you are a helpful assistant. Answer the question based on the context provided."
                                       "If you don't know the answer, say 'I don't know'.\n\nContext: {context}\n\nQuestion: {question}\n\nAnswer:")
 
@@ -120,14 +126,15 @@ if __name__=="__main__":
   all_splits = splitting_pdfs(pages)
   embeddings = get_embeddings(all_splits)
 
-  question = " what is copilot tuning?"
+  question = "can u tell me the name of this paper based on the content?"
   state = {"question": question}
+
 
   state.update(retrieve(state))
   state.update(generate(state))
-
+  
  
-  print(state["answer"])
+
 
 
 

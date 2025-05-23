@@ -11,4 +11,5 @@ python-dotenv
 httpx
 typing_extensions
 asyncio
+pypdf
 
