@@ -11,5 +11,7 @@ python-dotenv
 httpx
 typing_extensions
 asyncio
-pypdf
+langchain-pinecone
+streamlit
+
 
