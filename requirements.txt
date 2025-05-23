@@ -1,2 +1,14 @@
-transformers
-huggingface_hub
+# Core Langchain + Azure OpenAI + Qdrant
+langchain-text-splitters
+langchain-community
+langchain-qdrant
+langchain-openai
+langgraph
+qdrant-client
+aiofiles
+PyPDF2
+python-dotenv
+httpx
+typing_extensions
+asyncio
+
