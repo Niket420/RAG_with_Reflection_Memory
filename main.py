@@ -15,40 +15,48 @@ from qdrant_client.models import Distance, VectorParams
 from langchain_qdrant import QdrantVectorStore
 
 
-load_dotenv()
+# load_dotenv()
 
-api_key = os.getenv("AZURE_OPENAI_API_KEY")
-endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
-chat_deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT")
-embedding_deployment = os.getenv("AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT")
-api_version = os.getenv("AZURE_OPENAI_API_VERSION")
-
-
-
-if not os.environ.get("AZURE_OPENAI_API_KEY"):
-  os.environ["AZURE_OPENAI_API_KEY"] = getpass.getpass("Enter API key for Azure: ")
+# api_key = os.getenv("AZURE_OPENAI_API_KEY")
+# endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+# chat_deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT")
+# embedding_deployment = os.getenv("AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT")
+# api_version = os.getenv("AZURE_OPENAI_API_VERSION")
 
 
 
-llm = AzureChatOpenAI(
-        azure_endpoint=endpoint,
-        azure_deployment=chat_deployment,
-        openai_api_version=api_version,
-    )
+# if not os.environ.get("AZURE_OPENAI_API_KEY"):
+#   os.environ["AZURE_OPENAI_API_KEY"] = getpass.getpass("Enter API key for Azure: ")
 
 
-# embeddings = AzureOpenAIEmbeddings(
-#         azure_endpoint=endpoint,
-#         azure_deployment=embedding_deployment,
-#         openai_api_version=api_version,
-#         model="text-embedding-3-large" 
-#             )
 
-embeddings = AzureOpenAIEmbeddings(
-            azure_deployment = os.getenv("OPENAI_DEPLOYMENT_NAME"),
-            azure_endpoint = os.getenv("OPENAI_ENDPOINT"),
-            api_key = os.getenv("OPENAI_API_KEY")
-        )
+
+class GetModel:
+   def __init__(self):
+      load_dotenv()
+
+      if not os.environ.get("AZURE_OPENAI_API_KEY"):
+        os.environ["AZURE_OPENAI_API_KEY"] = getpass.getpass("Enter API key for Azure: ")
+
+      self.llm = AzureChatOpenAI(
+                  azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+                  azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT"),
+                  openai_api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+              )
+      
+      self.embedding = AzureOpenAIEmbeddings(
+                        azure_deployment = os.getenv("OPENAI_DEPLOYMENT_NAME"),
+                        azure_endpoint = os.getenv("OPENAI_ENDPOINT"),
+                        api_key = os.getenv("OPENAI_API_KEY")
+                    )
+
+
+models = GetModel()
+
+llm = models.llm
+embeddings = models.embedding
+
+
 
 
 client = QdrantClient(":memory:")
@@ -127,13 +135,28 @@ if __name__=="__main__":
   all_splits = splitting_pdfs(pages)
   embeddings = get_embeddings(all_splits)
 
-  question = "can you tell me about the name of this paper?"
+  question = "can u  explain the actual concept of this paper ?"
   state = {"question": question}
 
 
   state.update(retrieve(state))
   state.update(generate(state))
-  
+
+#   response2 = llm.invoke(f"""
+# You are a helpful assistant evaluating the quality of an AI-generated answer.
+
+# Given:
+# - Question: "{state['question']}"
+# - Answer: "{state['answer']}"
+
+# Please evaluate:
+# 1. Is the answer clearly relevant to the question?
+# 2. If not, suggest how the question could be improved to get a more accurate or informative response.
+
+# Write your evaluation and suggestion as a simple explanation in plain text, not in JSON or structured format.
+# """)
+
+
  
 
 
