@@ -2,7 +2,7 @@ import streamlit as st
 import tempfile
 import os
 import asyncio
-from main import read_pdf, splitting_pdfs, get_embeddings, retrieve, generate
+from main import read_pdf, splitting_pdfs, get_embeddings, retrieve, generate,self_reflection
 
 st.set_page_config(page_title="RAG with Reflection Memory (Preview)", layout="wide")
 st.title("📄 RAG Assistant with PDF Upload")
@@ -39,9 +39,13 @@ if query:
 
     st.session_state.chat_history.append((query, state["answer"]))
 
+   
+
+
 # Display conversation history
 if st.session_state.chat_history:
     st.subheader("📚 Conversation History")
     for q, a in reversed(st.session_state.chat_history):
         st.markdown(f"**You:** {q}")
         st.markdown(f"**RAG Assistant:** {a}")
+        st.markdown("---")

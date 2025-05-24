@@ -1,5 +1,6 @@
 import getpass
 import os
+import json
 from langchain_openai import AzureOpenAIEmbeddings
 from langchain_openai import AzureChatOpenAI
 from langchain_qdrant import QdrantVectorStore
@@ -52,7 +53,6 @@ class GetModel:
 
 
 models = GetModel()
-
 llm = models.llm
 embeddings = models.embedding
 
@@ -118,8 +118,43 @@ def generate(state: State):
     docs_content = "\n\n".join(doc.page_content for doc in state["context"])
     messages = prompt.invoke({"question": state["question"], "context": docs_content})
     response = llm.invoke(messages)
-    print(response.content)
     return {"answer": response.content}
+
+
+def self_reflection(state: State):
+    response = llm.invoke(
+        f"""
+        For the given query: "{state['question']}", and the provided answer: "{state['answer']}",
+        determine if the answer is the most suitable response to the query, using the context: "{[doc.page_content for doc in state['context']]}" as a guide.
+
+        If the answer is suitable, return:
+        {{
+            "is_correct": true,
+            "response": "<original answer>"
+        }}
+
+        If the answer is not suitable, return:
+        {{
+            "is_correct": false,
+            "response": "<refined query>"
+        }}
+        """
+    )
+
+    
+    try:
+        reflection_result = json.loads(response.content.strip())
+        if reflection_result.get("is_correct", True):
+            state["answer"] = reflection_result["response"]
+        else:
+            # Refine the question and regenerate
+            state["question"] = reflection_result["response"]
+            state.update(retrieve(state))
+            state.update(generate(state))
+    except json.JSONDecodeError:
+        pass  # If JSON parsing fails, keep the original answer
+      
+
 
 
 # make sure prompt.invoke works correctly| dekh le bhai same hi hai
@@ -130,6 +165,9 @@ prompt = PromptTemplate.from_template("you are a helpful assistant. Answer the q
 
 
 if __name__=="__main__":
+  
+
+
   file_path = "/Users/niketanand/Documents/MLOps/RAG_with_Reflection_Memory/copilot_tuning.pdf"
   pages  = asyncio.run(read_pdf(file_path))
   all_splits = splitting_pdfs(pages)
@@ -141,20 +179,14 @@ if __name__=="__main__":
 
   state.update(retrieve(state))
   state.update(generate(state))
+  print(state["answer"])
 
-#   response2 = llm.invoke(f"""
-# You are a helpful assistant evaluating the quality of an AI-generated answer.
 
-# Given:
-# - Question: "{state['question']}"
-# - Answer: "{state['answer']}"
 
-# Please evaluate:
-# 1. Is the answer clearly relevant to the question?
-# 2. If not, suggest how the question could be improved to get a more accurate or informative response.
 
-# Write your evaluation and suggestion as a simple explanation in plain text, not in JSON or structured format.
-# """)
+
+
+
 
 
  
